@@ -83,7 +83,7 @@ function Comproom({ edad }: ComproomProps) {
           />
           {selectedCompany && (
             <span className="text-white text-sm">
-              Compañía seleccionada: {selectedCompany}
+              Compañía seleccionada: C{selectedCompany}
             </span>
           )}
         </div>
@@ -100,18 +100,6 @@ function Comproom({ edad }: ComproomProps) {
           )}
         </div>
       </div>
-
-      {/* Mostrar los mensajes recibidos */}
-      {/* {messages.length > 0 && (
-        <div className="mt-4">
-          <Label>Mensajes recibidos:</Label>
-          <ul>
-            {messages.map((message, index) => (
-              <li key={index}>{message}</li>
-            ))}
-          </ul>
-        </div>
-      )} */}
     </>
   );
 }
