@@ -73,13 +73,13 @@ function Estaca({ setEstac, setBarr }: EstacaProps) {
   };
 
   if (loading) {
-    return <div>Cargando...</div>; // Mostrar un loading hasta que los datos estén listos
+    return <div className="text-md">Cargando Estacas y Barrios...</div>; // Mostrar un loading hasta que los datos estén listos
   }
 
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor="estaca">Estaca</Label>
+        <Label htmlFor="estaca">5. Estaca</Label>
         <Select onValueChange={handleEstacaChange}>
           <SelectTrigger className="bg-white/20 border-white/30 text-white">
             <SelectValue placeholder="Seleccione la estaca" />
@@ -95,7 +95,7 @@ function Estaca({ setEstac, setBarr }: EstacaProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="unidad">Barrio</Label>
+        <Label htmlFor="unidad">6. Barrio</Label>
         <Select onValueChange={handleBarrioChange} disabled={active}>
           <SelectTrigger className="bg-white/20 border-white/30 text-white">
             <SelectValue placeholder="Seleccione el barrio o rama" />

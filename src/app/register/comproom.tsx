@@ -75,7 +75,7 @@ function Comproom({ edad }: ComproomProps) {
   return (
     <>
       <div className="space-y-2">
-        <Label>Compañía de acuerdo a la edad</Label>
+        <Label>8. Compañía de acuerdo a la edad</Label>
         <div className="flex items-center space-x-2">
           <CompanySelectionDialog
             onSelect={setSelectedCompany}
@@ -90,7 +90,7 @@ function Comproom({ edad }: ComproomProps) {
       </div>
 
       <div className="space-y-2">
-        <Label>Habitación de acuerdo al sexo</Label>
+        <Label>9. Habitación de acuerdo al sexo</Label>
         <div className="flex items-center space-x-2">
           <RoomSelectionDialog onSelect={setSelectedRoom} />
           {selectedRoom && (

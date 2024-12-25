@@ -50,13 +50,13 @@ export default function Page() {
           <CardHeader>
             <CardTitle>Registro de Participante</CardTitle>
             <CardDescription className="text-gray-200">
-              Ingresa tus datos para participar
+              Ingresa los datos del participante, solo sigue la numeracion.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="apellidos">Apellidos</Label>
+                <Label htmlFor="apellidos">1. Apellidos</Label>
                 <Input
                   id="apellidos"
                   placeholder="Ingrese sus apellidos"
@@ -64,7 +64,7 @@ export default function Page() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nombres">Nombres</Label>
+                <Label htmlFor="nombres">2. Nombres</Label>
                 <Input
                   id="nombres"
                   placeholder="Ingrese sus nombres"
@@ -79,7 +79,7 @@ export default function Page() {
               />
               <Estaca setEstac={setEstaca} setBarr={setBarrio} />
               <div className="space-y-2">
-                <Label htmlFor="sexo">Sexo</Label>
+                <Label htmlFor="sexo">7. Sexo</Label>
                 <Select>
                   <SelectTrigger className="bg-white/20 border-white/30 text-white">
                     <SelectValue placeholder="Seleccione su sexo" />

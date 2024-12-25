@@ -54,7 +54,7 @@ function Edad({
   return (
     <>
       <div className="space-y-2">
-        <Label htmlFor="cumpleaños">Fecha de Nacimiento</Label>
+        <Label htmlFor="cumpleaños">3. Fecha de Nacimiento</Label>
         <Input
           id="cumpleaños"
           type="date"
@@ -66,7 +66,7 @@ function Edad({
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="edad">Edad (Se completa solo)</Label>
+        <Label htmlFor="edad">4. Edad (Se completa solo)</Label>
         <Input
           type="text"
           id="edad"
