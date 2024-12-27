@@ -8,6 +8,7 @@ import { socket } from "@/socket"; // Asegúrate de que este archivo socket.js s
 
 interface ComproomProps {
   edad: number; // Recibe la edad como prop
+  sexo: string;
 }
 // Definimos el tipo Company
 type Company = {
@@ -16,10 +17,10 @@ type Company = {
   mujeres: string;
 };
 
-function Comproom({ edad }: ComproomProps) {
+function Comproom({ edad, sexo }: ComproomProps) {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Company[]>([]);
+  const [companyMessages, setCompanyMessages] = useState<Company[]>([]);
 
   useEffect(() => {
     const channel = `summary-age-${edad}`;
@@ -52,9 +53,9 @@ function Comproom({ edad }: ComproomProps) {
         // Si el mensaje es válido o vacío, manejarlo
         setTimeout(() => {
           if (validMessages.length > 0) {
-            setMessages([...validMessages]); // Actualizar con mensajes válidos
+            setCompanyMessages([...validMessages]); // Actualizar con mensajes válidos
           } else {
-            setMessages([]); // Borrar el estado si no hay mensajes válidos
+            setCompanyMessages([]); // Borrar el estado si no hay mensajes válidos
             console.log(
               "Estado borrado debido a mensaje vacío o sin formato válido."
             );
@@ -71,7 +72,7 @@ function Comproom({ edad }: ComproomProps) {
     };
   }, [edad]);
 
-  console.log(messages);
+  console.log(companyMessages);
   return (
     <>
       <div className="space-y-2">
@@ -79,7 +80,7 @@ function Comproom({ edad }: ComproomProps) {
         <div className="flex items-center space-x-2">
           <CompanySelectionDialog
             onSelect={setSelectedCompany}
-            comp={messages}
+            comp={companyMessages}
           />
           {selectedCompany && (
             <span className="text-white text-sm">

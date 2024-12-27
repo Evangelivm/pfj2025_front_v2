@@ -27,6 +27,7 @@ export default function Page() {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [fechaNacimiento, setFechaNacimiento] = useState<string>("");
+  const [sexo, setSexo] = useState<string>("");
   const [edad, setEdad] = useState<number>(0);
   const [estaca, setEstaca] = useState<number>(0);
   const [barrio, setBarrio] = useState<number>(0);
@@ -41,8 +42,8 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[#006184] text-white">
       <header className="p-4 bg-[#01B6D1] shadow-lg">
-        <h1 className="text-2xl font-bold text-center">FSY 2025</h1>
-        <p className="text-center text-sm">LOOK UNTO CHRIST</p>
+        <h1 className="text-2xl font-bold text-center">PFJ 2025</h1>
+        <p className="text-center text-sm">Mira hacia Cristo</p>
       </header>
 
       <main className="container mx-auto md:py-4 md:px-20 p-4 space-y-6">
@@ -80,7 +81,9 @@ export default function Page() {
               <Estaca setEstac={setEstaca} setBarr={setBarrio} />
               <div className="space-y-2">
                 <Label htmlFor="sexo">7. Sexo</Label>
-                <Select>
+                <Select
+                  onValueChange={(value) => setSexo(value)} // Actualiza el estado
+                >
                   <SelectTrigger className="bg-white/20 border-white/30 text-white">
                     <SelectValue placeholder="Seleccione su sexo" />
                   </SelectTrigger>
@@ -90,7 +93,8 @@ export default function Page() {
                   </SelectContent>
                 </Select>
               </div>
-              <Comproom edad={edad} /> {/* Pasamos la edad como prop */}
+              <Comproom edad={edad} sexo={sexo} />
+              {/* Pasamos la edad como prop */}
             </div>
             <Button className="w-full mt-6 bg-[#FFB81C] text-[#006184] hover:bg-[#FFB81C]/90">
               Registrar
