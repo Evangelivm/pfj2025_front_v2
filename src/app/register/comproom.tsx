@@ -8,7 +8,7 @@ import { socket } from "@/socket"; // Asegúrate de que este archivo socket.js s
 
 interface ComproomProps {
   edad: number; // Recibe la edad como prop
-  sexo: string;
+  genero: string;
 }
 // Definimos el tipo Company
 type Company = {
@@ -17,19 +17,28 @@ type Company = {
   mujeres: string;
 };
 
-function Comproom({ edad, sexo }: ComproomProps) {
+// Definimos el tipo Room
+type Room = {
+  name: string;
+  occupiedBeds: number;
+  totalBeds: number;
+};
+
+function Comproom({ edad, genero }: ComproomProps) {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [companyMessages, setCompanyMessages] = useState<Company[]>([]);
+  const [roomsData, setRoomsData] = useState<Room[]>([]);
 
   useEffect(() => {
-    const channel = `summary-age-${edad}`;
+    const companyChannel = `summary-age-${edad}`;
+    const roomChannel = `rooms-age-${edad}-${genero}`;
 
-    // Emitir suscripción
-    socket.emit("subscribeToChannel", channel);
+    // Emitir suscripción para compañías
+    socket.emit("subscribeToChannel", companyChannel);
 
-    // Manejar mensajes nuevos
-    socket.on(channel, (message: any) => {
+    // Manejar mensajes nuevos para compañías
+    socket.on(companyChannel, (message: any) => {
       try {
         // Asegurarse de que el mensaje esté parseado como JSON
         const parsedMessage =
@@ -66,13 +75,57 @@ function Comproom({ edad, sexo }: ComproomProps) {
       }
     });
 
+    // Emitir suscripción para habitaciones
+    socket.emit("subscribeToChannel", roomChannel);
+
+    // Manejar mensajes nuevos para habitaciones
+    socket.on(roomChannel, (message: any) => {
+      try {
+        // Asegurarse de que el mensaje esté parseado como JSON
+        const parsedMessage =
+          typeof message === "string" ? JSON.parse(message) : message;
+
+        // Verificar si es un array o encapsular en uno
+        const newMessages = Array.isArray(parsedMessage)
+          ? parsedMessage
+          : [parsedMessage];
+
+        // Validar objetos dentro del array
+        const validMessages = newMessages.filter(
+          (msg) =>
+            msg &&
+            typeof msg === "object" &&
+            typeof msg.name === "string" &&
+            typeof msg.occupiedBeds === "number" &&
+            typeof msg.totalBeds === "number"
+        );
+
+        // Si el mensaje es válido o vacío, manejarlo
+        setTimeout(() => {
+          if (validMessages.length > 0) {
+            setRoomsData([...validMessages]); // Actualizar con mensajes válidos
+          } else {
+            setRoomsData([]); // Borrar el estado si no hay mensajes válidos
+            console.log(
+              "Estado borrado debido a mensaje vacío o sin formato válido."
+            );
+          }
+        }, 1000);
+      } catch (error) {
+        console.error("Error al parsear mensaje:", error);
+      }
+    });
+
     // Cleanup
     return () => {
-      socket.off(channel);
+      socket.off(companyChannel);
+      socket.off(roomChannel);
     };
-  }, [edad]);
+  }, [edad, genero]);
 
   console.log(companyMessages);
+  console.log(roomsData);
+
   return (
     <>
       <div className="space-y-2">
@@ -84,7 +137,7 @@ function Comproom({ edad, sexo }: ComproomProps) {
           />
           {selectedCompany && (
             <span className="text-white text-sm">
-              Compañía seleccionada: C{selectedCompany}
+              Compañía seleccionada: <b>C{selectedCompany}</b>
             </span>
           )}
         </div>
@@ -93,7 +146,7 @@ function Comproom({ edad, sexo }: ComproomProps) {
       <div className="space-y-2">
         <Label>9. Habitación de acuerdo al sexo</Label>
         <div className="flex items-center space-x-2">
-          <RoomSelectionDialog onSelect={setSelectedRoom} />
+          <RoomSelectionDialog onSelect={setSelectedRoom} rooms={roomsData} />
           {selectedRoom && (
             <span className="text-white text-sm">
               Habitación seleccionada: <b>{selectedRoom}</b>

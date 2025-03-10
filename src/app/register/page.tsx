@@ -27,7 +27,7 @@ export default function Page() {
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
   const [fechaNacimiento, setFechaNacimiento] = useState<string>("");
-  const [sexo, setSexo] = useState<string>("");
+  const [genero, setGenero] = useState<string>("");
   const [edad, setEdad] = useState<number>(0);
   const [estaca, setEstaca] = useState<number>(0);
   const [barrio, setBarrio] = useState<number>(0);
@@ -51,7 +51,8 @@ export default function Page() {
           <CardHeader>
             <CardTitle>Registro de Participante</CardTitle>
             <CardDescription className="text-gray-200">
-              Ingresa los datos del participante, solo sigue la numeracion.
+              Ingresa los datos del participante siguiendo la numeracion de cada
+              paso.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -82,7 +83,7 @@ export default function Page() {
               <div className="space-y-2">
                 <Label htmlFor="sexo">7. Sexo</Label>
                 <Select
-                  onValueChange={(value) => setSexo(value)} // Actualiza el estado
+                  onValueChange={(value) => setGenero(value)} // Actualiza el estado
                 >
                   <SelectTrigger className="bg-white/20 border-white/30 text-white">
                     <SelectValue placeholder="Seleccione su sexo" />
@@ -93,7 +94,7 @@ export default function Page() {
                   </SelectContent>
                 </Select>
               </div>
-              <Comproom edad={edad} sexo={sexo} />
+              <Comproom edad={edad} genero={genero} />
               {/* Pasamos la edad como prop */}
             </div>
             <Button className="w-full mt-6 bg-[#FFB81C] text-[#006184] hover:bg-[#FFB81C]/90">

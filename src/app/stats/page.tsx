@@ -1,326 +1,271 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import {
-  Building2,
-  Users,
-  UserIcon as Male,
-  UserIcon as Female,
-  Check,
-  X,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
+import { Building2, Users, UserRound, MapPin, Check, X } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import { getStats } from "@/connections";
 
-type Stake = "Santa Clara" | "Vitarte" | "Chosica" | "Chaclacayo";
-type Ward = "Barrio 1" | "Barrio 2" | "Barrio 3" | "Barrio 4";
-
-type Participant = {
+interface Participant {
   id: number;
   name: string;
-  gender: "male" | "female";
-  attended: boolean;
-  stake: Stake;
-  ward: Ward;
-};
-
-type Company = {
-  id: number;
-  name: string;
-  total: number;
-  men: number;
-  women: number;
-  participants: Participant[];
-};
-
-const stakes: Stake[] = ["Santa Clara", "Vitarte", "Chosica", "Chaclacayo"];
-const wards: Ward[] = ["Barrio 1", "Barrio 2", "Barrio 3", "Barrio 4"];
-
-const firstNames = [
-  "Juan",
-  "María",
-  "Carlos",
-  "Ana",
-  "Luis",
-  "Sofía",
-  "Pedro",
-  "Laura",
-  "Miguel",
-  "Isabel",
-  "José",
-  "Carmen",
-  "Fernando",
-  "Patricia",
-  "Ricardo",
-  "Elena",
-];
-
-const lastNames = [
-  "García",
-  "Rodríguez",
-  "López",
-  "Martínez",
-  "González",
-  "Pérez",
-  "Sánchez",
-  "Ramírez",
-  "Torres",
-  "Flores",
-  "Rivera",
-  "Gómez",
-  "Díaz",
-  "Reyes",
-  "Morales",
-  "Cruz",
-];
-
-function getRandomName(): string {
-  const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-  const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-  return `${firstName} ${lastName}`;
+  gender: string;
+  present: boolean;
+  stake: string;
+  ward: string;
+  location: string;
 }
 
-const companies: Company[] = Array.from({ length: 22 }, (_, i) => ({
-  id: i + 1,
-  name: `Compañía ${i + 1}`,
-  total: Math.floor(Math.random() * 50) + 10,
-  men: Math.floor(Math.random() * 25) + 5,
-  women: Math.floor(Math.random() * 25) + 5,
-  participants: Array.from(
-    { length: Math.floor(Math.random() * 50) + 10 },
-    (_, j) => ({
-      id: j + 1,
-      name: getRandomName(),
-      gender: Math.random() > 0.5 ? "male" : "female",
-      attended: Math.random() > 0.5,
-      stake: stakes[Math.floor(Math.random() * stakes.length)],
-      ward: wards[Math.floor(Math.random() * wards.length)],
-    })
-  ),
-}));
+interface Company {
+  id: number;
+  name: string;
+  participants: Participant[];
+}
 
-export default function Dashboard() {
-  const [companiesData, setCompaniesData] = useState<Company[]>(companies);
+interface ParticipanteStats {
+  nombres: string;
+  sexo: "H" | "M";
+  estaca: string;
+  barrio: string;
+  compañia: number;
+  habitacion: string;
+  asistio: "Si" | "No";
+}
 
-  const totalCompanies = companiesData.length;
-  const totalEmployees = companiesData.reduce(
-    (sum, company) => sum + company.total,
+const transformStatsToCompanies = (
+  statsData: ParticipanteStats[]
+): Company[] => {
+  // Agrupar participantes por compañía
+  const groupedByCompany = statsData.reduce((acc, participant) => {
+    const companyId = participant.compañia;
+    if (!acc[companyId]) {
+      acc[companyId] = [];
+    }
+    acc[companyId].push(participant);
+    return acc;
+  }, {} as Record<number, ParticipanteStats[]>);
+
+  // Transformar grupos en el formato deseado
+  const companies = Object.entries(groupedByCompany).map(
+    ([companyId, participants]) => {
+      return {
+        id: parseInt(companyId),
+        name: `Compañía ${companyId}`,
+        participants: participants.map((p, index) => ({
+          id: index + 1,
+          name: p.nombres,
+          gender: p.sexo,
+          present: p.asistio === "Si",
+          stake: p.estaca,
+          ward: p.barrio,
+          location: p.habitacion,
+        })),
+      };
+    }
+  );
+
+  return companies.sort((a, b) => a.id - b.id);
+};
+
+function App() {
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        const statsData = await getStats();
+        const transformedData = transformStatsToCompanies(statsData);
+        setCompanies(transformedData);
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
+
+  // Calculate totals
+  const totalCompanies = companies.length;
+  const totalParticipants = companies.reduce(
+    (acc, company) => acc + company.participants.length,
     0
   );
-  const totalMen = companiesData.reduce((sum, company) => sum + company.men, 0);
-  const totalWomen = companiesData.reduce(
-    (sum, company) => sum + company.women,
+  const maleParticipants = companies.reduce(
+    (acc, company) =>
+      acc + company.participants.filter((p) => p.gender === "H").length,
+    0
+  );
+  const femaleParticipants = companies.reduce(
+    (acc, company) =>
+      acc + company.participants.filter((p) => p.gender === "M").length,
     0
   );
 
-  const toggleAttendance = (companyId: number, participantId: number) => {
-    setCompaniesData((prevCompanies) =>
-      prevCompanies.map((company) =>
-        company.id === companyId
-          ? {
-              ...company,
-              participants: company.participants.map((participant) =>
-                participant.id === participantId
-                  ? { ...participant, attended: !participant.attended }
-                  : participant
-              ),
-            }
-          : company
-      )
-    );
-  };
+  const stats = [
+    { title: "Total Compañías", value: totalCompanies, icon: Building2 },
+    { title: "Total Participantes", value: totalParticipants, icon: Users },
+    { title: "Hombres", value: maleParticipants, icon: UserRound },
+    { title: "Mujeres", value: femaleParticipants, icon: UserRound },
+  ];
+
+  if (loading) {
+    return <div>Cargando...</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="container mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-center text-gray-800">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-8 text-center">
           Dashboard de Compañías
         </h1>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <SummaryCard
-            title="Total Compañías"
-            value={totalCompanies}
-            icon={Building2}
-            color="text-blue-600"
-          />
-          <SummaryCard
-            title="Total Empleados"
-            value={totalEmployees}
-            icon={Users}
-            color="text-green-600"
-          />
-          <SummaryCard
-            title="Total Hombres"
-            value={totalMen}
-            icon={Male}
-            color="text-indigo-600"
-          />
-          <SummaryCard
-            title="Total Mujeres"
-            value={totalWomen}
-            icon={Female}
-            color="text-purple-600"
-          />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {companiesData.map((company) => (
-            <CompanyCard
-              key={company.id}
-              company={company}
-              toggleAttendance={toggleAttendance}
-            />
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {stats.map((stat, index) => (
+            <Card key={index} className="p-6 hover:shadow-lg transition-shadow">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-primary/10 rounded-full">
+                  <stat.icon className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </p>
+                  <h3 className="text-2xl font-bold">{stat.value}</h3>
+                </div>
+              </div>
+            </Card>
           ))}
         </div>
+
+        {/* Companies Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {companies.map((company) => (
+            <Card
+              key={company.id}
+              className="p-6 cursor-pointer hover:shadow-lg transition-all"
+              onClick={() => setSelectedCompany(company)}
+            >
+              <h3 className="text-xl font-semibold mb-2">{company.name}</h3>
+              <div className="mt-4 flex items-center space-x-2">
+                <Badge variant="secondary">
+                  Total: {company.participants.length}/10
+                </Badge>
+                <Badge className="bg-blue-500 hover:bg-blue-600">
+                  Hombres:{" "}
+                  {company.participants.filter((p) => p.gender === "H").length}
+                  /5
+                </Badge>
+                <Badge className="bg-pink-500 hover:bg-pink-600">
+                  Mujeres:{" "}
+                  {company.participants.filter((p) => p.gender === "M").length}
+                  /5
+                </Badge>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Company Details Dialog */}
+        <Dialog
+          open={!!selectedCompany}
+          onOpenChange={() => setSelectedCompany(null)}
+        >
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>
+                <div>
+                  <h2 className="text-xl font-semibold">
+                    {selectedCompany?.name}
+                  </h2>
+                  <div className="mt-4 flex items-center space-x-2">
+                    <Badge variant="secondary">
+                      Total: {selectedCompany?.participants.length}/10
+                    </Badge>
+                    <Badge className="bg-blue-500 hover:bg-blue-600">
+                      Hombres:{" "}
+                      {
+                        selectedCompany?.participants.filter(
+                          (p) => p.gender === "H"
+                        ).length
+                      }
+                      /5
+                    </Badge>
+                    <Badge className="bg-pink-500 hover:bg-pink-600">
+                      Mujeres:{" "}
+                      {
+                        selectedCompany?.participants.filter(
+                          (p) => p.gender === "M"
+                        ).length
+                      }
+                      /5
+                    </Badge>
+                  </div>
+                </div>
+              </DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh]">
+              <div className="space-y-4">
+                {selectedCompany?.participants.map((participant) => (
+                  <Card key={participant.id} className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        {participant.gender === "H" ? (
+                          <UserRound className="w-5 h-5 text-blue-500" />
+                        ) : (
+                          <UserRound className="w-5 h-5 text-pink-500" />
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{participant.name}</p>
+                            <div className="flex items-center text-muted-foreground mb-1">
+                              <MapPin className="w-4 h-4 mr-1" />
+                              <span className="text-sm">
+                                {participant.location}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {participant.stake}, {participant.ward}
+                          </p>
+                        </div>
+                      </div>
+                      <div
+                        className={cn(
+                          "flex items-center",
+                          participant.present
+                            ? "text-green-500"
+                            : "text-gray-400"
+                        )}
+                      >
+                        {participant.present ? (
+                          <Check className="w-5 h-5" />
+                        ) : (
+                          <X className="w-5 h-5" />
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
 }
 
-function SummaryCard({ title, value, icon: Icon, color }) {
-  return (
-    <Card className="border-t-4" style={{ borderTopColor: `var(--${color})` }}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium text-gray-600">
-          {title}
-        </CardTitle>
-        <Icon className={`h-5 w-5 ${color}`} />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-gray-800">
-          {value.toLocaleString()}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function CompanyCard({ company, toggleAttendance }) {
-  const sortedParticipants = useMemo(() => {
-    const women = company.participants.filter((p) => p.gender === "female");
-    const men = company.participants.filter((p) => p.gender === "male");
-    return [...women, ...men];
-  }, [company.participants]);
-
-  const attendedWomen = useMemo(
-    () =>
-      company.participants.filter((p) => p.gender === "female" && p.attended)
-        .length,
-    [company.participants]
-  );
-
-  const attendedMen = useMemo(
-    () =>
-      company.participants.filter((p) => p.gender === "male" && p.attended)
-        .length,
-    [company.participants]
-  );
-
-  return (
-    <Card className="overflow-hidden transition-all duration-300 hover:shadow-md">
-      <CardHeader className="bg-gray-100">
-        <CardTitle className="text-lg text-gray-800">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button
-                variant="link"
-                className="p-0 h-auto font-semibold text-lg text-gray-800"
-              >
-                {company.name}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>{company.name} - Participantes</DialogTitle>
-              </DialogHeader>
-              <div className="flex justify-between text-sm font-semibold">
-                <span className="flex items-center ">
-                  <Female className="h-4 w-4 text-purple-500 mr-1" />
-                  Mujeres - ({attendedWomen}/{company.women})
-                </span>
-                <span className="flex items-center">
-                  ({attendedMen}/{company.men}) - Hombres
-                  <Male className="h-4 w-4 text-blue-500 ml-1" />
-                </span>
-              </div>
-              <Separator />
-              <ScrollArea className="h-[50vh] w-full pr-4">
-                {sortedParticipants.map((participant, index) => (
-                  <div key={participant.id}>
-                    {index === company.women && <Separator className="my-2" />}
-                    <div className="flex items-center justify-between py-2">
-                      <span className="flex items-center gap-2">
-                        {participant.gender === "male" ? (
-                          <Male className="h-4 w-4 text-blue-500" />
-                        ) : (
-                          <Female className="h-4 w-4 text-purple-500" />
-                        )}
-                        <span className="relative text-sm">
-                          {participant.name}
-                          <sup className="absolute top-0 left-full ml-1 text-xs text-gray-500 whitespace-nowrap">
-                            ({participant.stake} - {participant.ward})
-                          </sup>
-                        </span>
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          toggleAttendance(company.id, participant.id)
-                        }
-                        className={
-                          participant.attended
-                            ? "text-green-500 hover:text-green-600"
-                            : "text-gray-400 hover:text-gray-500"
-                        }
-                      >
-                        {participant.attended ? (
-                          <Check className="h-5 w-5" />
-                        ) : (
-                          <X className="h-5 w-5" />
-                        )}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </ScrollArea>
-            </DialogContent>
-          </Dialog>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="mt-4">
-        <div className="flex justify-between items-center mb-2 p-2 border-b">
-          <span className="flex items-center text-gray-600">
-            <Users className="h-5 w-5 mr-2 text-gray-400" />
-            Total
-          </span>
-          <span className="font-bold text-gray-800">{company.total}</span>
-        </div>
-        <div className="flex justify-between items-center mb-2 p-2">
-          <span className="flex items-center text-gray-600">
-            <Male className="h-5 w-5 mr-2 text-blue-400" />
-            Hombres
-          </span>
-          <span className="text-gray-800">{company.men}</span>
-        </div>
-        <div className="flex justify-between items-center p-2">
-          <span className="flex items-center text-gray-600">
-            <Female className="h-5 w-5 mr-2 text-purple-400" />
-            Mujeres
-          </span>
-          <span className="text-gray-800">{company.women}</span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
+export default App;

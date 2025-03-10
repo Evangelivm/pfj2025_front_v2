@@ -16,17 +16,12 @@ type Room = {
   totalBeds: number;
 };
 
-const rooms: Room[] = [
-  { name: "B01", occupiedBeds: 2, totalBeds: 4 },
-  { name: "B02", occupiedBeds: 1, totalBeds: 4 },
-  { name: "B03", occupiedBeds: 3, totalBeds: 4 },
-  { name: "B04", occupiedBeds: 0, totalBeds: 4 },
-];
-
 export function RoomSelectionDialog({
   onSelect,
+  rooms,
 }: {
   onSelect: (room: string) => void;
+  rooms: Room[]; // Array de habitaciones dinámico
 }) {
   const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
 
